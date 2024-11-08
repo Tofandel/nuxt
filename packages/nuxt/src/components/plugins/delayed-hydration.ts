@@ -4,7 +4,7 @@ import MagicString from 'magic-string'
 import { isVue } from '../../core/utils'
 
 export const DelayedHydrationPlugin = (options: { sourcemap: boolean }) => createUnplugin(() => {
-  const DELAYED_HYDRATION_RE = /<(?:Lazy([A-Z]\w*)|lazy-([\w-]+))\b([^>]+)hydrate:(\w+)(="([^"]+)")?([ />])([^>]*(?:(?<=\/)|>[\s\S]+?<\/Lazy[A-Z]\w*|lazy-[\w-]+))>/g
+  const DELAYED_HYDRATION_RE = /<(?:Lazy|lazy-)([A-Z]\w*|[\w-]+)\b([^>]+)hydrate:(\w+)(="([^"]+)")?([ />])([^>]*(?:(?<=\/)|>[\s\S]+?<\/Lazy[A-Z]\w*|lazy-[\w-]+))>/g
   const types = new Map([['time', 'Time'], ['promise', 'Promise'], ['if', 'If'], ['event', 'Event'], ['visible', 'Visible'], ['media', 'Media'], ['never', 'Never'], ['idle', 'Idle']])
   const correctVals = new Map([['time', 'number'], ['promise', 'Promise'], ['event', 'string | string[]'], ['visible', 'IntersectionObserverInit'], ['media', 'string'], ['idle', 'number']])
   return {
