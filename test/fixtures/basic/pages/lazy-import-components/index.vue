@@ -3,28 +3,34 @@
     <LazyNCompAll message="lazy-named-comp-all" />
     <LazyNCompClient message="lazy-named-comp-client" />
     <LazyNCompServer message="lazy-named-comp-server" />
-    <LazyEventDelayedEvent id="lazyevent" />
-    <LazyEventView />
-    <LazyVisibleDelayedVisible />
-    <LazyNeverDelayedNever />
-    <LazyEventDelayedEvent
-      id="lazyevent2"
-      :hydrate="createEventLoader(['click'])"
+    <LazyDelayedEvent
+      id="lazyevent"
+      hydrate:event
     />
-    <LazyIfDelayedCondition id="lazycondition" />
+    <LazyEventView />
+    <LazyDelayedVisible hydrate:visible />
+    <LazyDelayedNever hydrate:never />
+    <LazyDelayedEvent
+      id="lazyevent2"
+      :hydrate:event="['click']"
+    />
+    <LazyDelayedCondition
+      id="lazycondition"
+      hydrate:if
+    />
     <button
       id="conditionbutton"
       @click="state++"
     />
-    <LazyIfDelayedCondition
+    <LazyDelayedCondition
       id="lazycondition2"
-      :hydrate="state > 1"
+      :hydrate:if="state > 1"
     />
-    <LazyIdleDelayedNetwork />
+    <LazyDelayedNetwork hydrate:idle />
     <div style="height:3000px">
       This is a very tall div
     </div>
-    <LazyVisibleDelayedVisible />
+    <LazyDelayedVisible hydrate:visible />
   </div>
 </template>
 

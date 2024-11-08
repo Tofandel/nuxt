@@ -1,6 +1,7 @@
 <template>
   <div>
-    <LazyEventDelayedModel
+    <LazyDelayedModel
+      hydrate:event
       v-model="model"
       @hydrated="log"
     />

@@ -117,22 +117,14 @@ export const componentsTypeTemplate = {
       ]
     })
     const islandType = 'type IslandComponent<T extends DefineComponent> = T & DefineComponent<{}, {refresh: () => Promise<void>}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, SlotsType<{ fallback: { error: unknown } }>>'
-    const delayedType = 'type DelayedComponent<T> = DefineComponent<{hydrate?: T},{},{},{},{},{},{},{hydrated: void}>'
+    const delayedType = `type TypeWithDefault<T> = boolean | T\ntype HydrationStrategy = "idle" | "event" | "promise" | "if" | "visible" | "time" | "never"\ntype HydrationMap = { idle: number, event: string | string[], promise: Promise<unknown>, if: boolean | unknown, visible: IntersectionObserverInit, time: number, never: boolean }\ntype DelayedComponent<T extends DefineComponent> = T & DefineComponent<{[K in keyof HydrationMap as \`hydrate:$\{K}\`]?: TypeWithDefault<HydrationMap[K]>},{},{},{},{},{},{hydrated: void},{},{},{},{},{},{},{},{hydrate:{}}>`
     return `
 import type { DefineComponent, SlotsType } from 'vue'
 ${nuxt.options.experimental.componentIslands ? islandType : ''}
 ${nuxt.options.experimental.delayedHydration ? delayedType : ''}
 interface _GlobalComponents {
   ${componentTypes.map(([pascalName, type]) => `    '${pascalName}': ${type}`).join('\n')}
-  ${componentTypes.map(([pascalName, type]) => `    'Lazy${pascalName}': ${type}`).join('\n')}
-  ${componentTypes.map(([pascalName, type]) => `    'LazyIdle${pascalName}': ${type} & DelayedComponent<number>`).join('\n')}
-  ${componentTypes.map(([pascalName, type]) => `    'LazyTime${pascalName}': ${type} & DelayedComponent<number>`).join('\n')}
-  ${componentTypes.map(([pascalName, type]) => `    'LazyPromise${pascalName}': ${type} & DelayedComponent<Promise<unknown>>`).join('\n')}
-  ${componentTypes.map(([pascalName, type]) => `    'LazyVisible${pascalName}': ${type} & DelayedComponent<IntersectionObserverInit>`).join('\n')}
-  ${componentTypes.map(([pascalName, type]) => `    'LazyEvent${pascalName}': ${type} & DelayedComponent<keyof HTMLElementEventMap | Array<keyof HTMLElementEventMap>>`).join('\n')}
-  ${componentTypes.map(([pascalName, type]) => `    'LazyMedia${pascalName}': ${type} & DelayedComponent<string>`).join('\n')}
-  ${componentTypes.map(([pascalName, type]) => `    'LazyIf${pascalName}': ${type} & DelayedComponent<unknown>`).join('\n')}
-  ${componentTypes.map(([pascalName, type]) => `    'LazyNever${pascalName}': ${type}`).join('\n')}
+  ${componentTypes.map(([pascalName, type]) => `    'Lazy${pascalName}': DelayedComponent<${type}>`).join('\n')}
 }
 
 declare module 'vue' {
@@ -140,15 +132,7 @@ declare module 'vue' {
 }
 
 ${componentTypes.map(([pascalName, type]) => `export const ${pascalName}: ${type}`).join('\n')}
-${componentTypes.map(([pascalName, type]) => `export const Lazy${pascalName}: ${type}`).join('\n')}
-${componentTypes.map(([pascalName, type]) => `export const LazyIdle${pascalName}: ${type} & DelayedComponent<number>`).join('\n')}
-${componentTypes.map(([pascalName, type]) => `export const LazyTime${pascalName}: ${type} & DelayedComponent<number>`).join('\n')}
-${componentTypes.map(([pascalName, type]) => `export const LazyPromise${pascalName}: ${type} & DelayedComponent<Promise<unknown>>`).join('\n')}
-${componentTypes.map(([pascalName, type]) => `export const LazyVisible${pascalName}: ${type} & DelayedComponent<IntersectionObserverInit>`).join('\n')}
-${componentTypes.map(([pascalName, type]) => `export const LazyEvent${pascalName}: ${type} & DelayedComponent<keyof HTMLElementEventMap | Array<keyof HTMLElementEventMap>>`).join('\n')}
-${componentTypes.map(([pascalName, type]) => `export const LazyMedia${pascalName}: ${type} & DelayedComponent<string>`).join('\n')}
-${componentTypes.map(([pascalName, type]) => `export const LazyIf${pascalName}: ${type} & DelayedComponent<unknown>`).join('\n')}
-${componentTypes.map(([pascalName, type]) => `export const LazyNever${pascalName}: ${type}`).join('\n')}
+${componentTypes.map(([pascalName, type]) => `export const Lazy${pascalName}: DelayedComponent<${type}>`).join('\n')}
 
 export const componentNames: string[]
 `

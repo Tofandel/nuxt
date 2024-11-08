@@ -5,11 +5,11 @@ const prImmediate = Promise.resolve(42)
 
 <template>
   <div>
-    <LazyPromiseDelayedPromise
-      :hydrate="pr"
+    <LazyDelayedPromise
+      :hydrate:promise="pr"
     />
-    <LazyPromiseDelayedPromise
-      :hydrate="prImmediate"
+    <LazyDelayedPromise
+      :hydrate:promise="prImmediate"
     />
   </div>
 </template>
