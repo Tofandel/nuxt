@@ -19,7 +19,7 @@ export const DelayedHydrationPlugin = (options: { sourcemap: boolean }) => creat
         const shouldDefault = type !== 'if' && (val === 'true' || val === 'false')
         if (!types.has(type)) { logger.warn(`Unexpected hydration strategy \`${type}\` when parsing \`${_}\` in \`${id}\`, this will default to visibility. For custom strategies, please use \`v-hydrate:if\` in stead.`) }
         if (type === 'never' && selfOrValue) { logger.warn('`hydrate:never` does not accept any value. It is meant to be used as is, and the value will not affect its runtime behavior.') }
-        if (shouldDefault) { logger.warn(`Invalid value `${val}` for \`hydrate:${type}\` when parsing \`${_}\` in \`${id}\`. The prop is not meant to be assigned a boolean, but used as is or given ${type === 'never' ? 'no value' : `a value of type \`${correctVals.get(type) ?? 'unknown'}\``}. This will not affect runtime behavior and the defaults will be used in stead.`) }
+        if (shouldDefault) { logger.warn(`Invalid value \`${val}\` for \`hydrate:${type}\` when parsing \`${_}\` in \`${id}\`. The prop is not meant to be assigned a boolean, but used as is or given ${type === 'never' ? 'no value' : `a value of type \`${correctVals.get(type) ?? 'unknown'}\``}. This will not affect runtime behavior and the defaults will be used in stead.`) }
         return `<Lazy${types.get(type) ?? 'Visible'}${comp}${pre}${type == 'never' || shouldDefault ? '' : `:hydrate="${val}"`}${post}>`
       })
       if (s.hasChanged()) {
