@@ -6,6 +6,7 @@ import { relative } from 'pathe'
 import type { Component, ComponentsOptions } from 'nuxt/schema'
 
 import { logger, tryUseNuxt } from '@nuxt/kit'
+import * as delayedComponents from '../runtime/client-delayed-component'
 import { QUOTE_RE, SX_RE, isVue } from '../../core/utils'
 
 interface LoaderOptions {
@@ -18,7 +19,13 @@ interface LoaderOptions {
   experimentalComponentIslands?: boolean
 }
 
-const REPLACE_COMPONENT_TO_DIRECT_IMPORT_RE = /(?<=[ (])_?resolveComponent\(\s*["'](lazy-|Lazy(?=[A-Z]))?(Idle|Visible|idle-|visible-|Event|event-|Media|media-|If|if-|Never|never-|Time|time-|Promise|promise-)?([^'"]*)["'][^)]*\)/g
+const supportedHydrations = Object.keys(delayedComponents).filter(k => k.startsWith('createHydrate')).map(k => k.replace('createHydrate', '').toLowerCase())
+
+const hydrationRegex = supportedHydrations.reduce((re, method) => (re.push(method + '-', pascalCase(method)), re), []).join('|')
+
+const REPLACE_COMPONENT_TO_DIRECT_IMPORT_RE = new RegExp(
+  `(?<=[ (])resolveComponent\\(\\s*(["'])(?<lazy>lazy-|Lazy(?=[A-Z]))?(?<hydration>${hydrationRegex})?(?<component>[^'"]*)\\1[^)]*\\)`,
+  'g')
 export const LoaderPlugin = (options: LoaderOptions) => createUnplugin(() => {
   const exclude = options.transform?.exclude || []
   const include = options.transform?.include || []
@@ -44,9 +51,10 @@ export const LoaderPlugin = (options: LoaderOptions) => createUnplugin(() => {
       const map = new Map<Component, string>()
       const s = new MagicString(code)
       // replace `_resolveComponent("...")` to direct import
-      s.replace(REPLACE_COMPONENT_TO_DIRECT_IMPORT_RE, (full: string, lazy: string, modifier: string, name: string) => {
-        const normalComponent = findComponent(components, name, options.mode)
-        const modifierComponent = !normalComponent && modifier ? findComponent(components, modifier + name, options.mode) : null
+      s.replace(REPLACE_COMPONENT_TO_DIRECT_IMPORT_RE, (full: string, ...args) => {
+        const { lazy, hydration: modifier, component: componentName } = args.pop()
+        const normalComponent = findComponent(components, nuxt?.options.experimental.delayedHydration !== true ? modifier + componentName : componentName, options.mode)
+        const modifierComponent = !normalComponent && modifier ? findComponent(components, modifier + componentName, options.mode) : null
         const component = normalComponent || modifierComponent
 
         if (component) {
@@ -81,56 +89,11 @@ export const LoaderPlugin = (options: LoaderOptions) => createUnplugin(() => {
           if (lazy) {
             const dynamicImport = `${genDynamicImport(component.filePath, { interopDefault: false })}.then(c => c.${component.export ?? 'default'} || c)`
             if (modifier && normalComponent && nuxt?.options.experimental.delayedHydration === true) {
-              switch (modifier) {
-                case 'Visible':
-                case 'visible-':
-                  imports.add(genImport(options.clientDelayedComponentRuntime, [{ name: 'createLazyIOComponent' }]))
-                  identifier += '_delayedIO'
-                  imports.add(`const ${identifier} = createLazyIOComponent(${dynamicImport})`)
-                  break
-                case 'Event':
-                case 'event-':
-                  imports.add(genImport(options.clientDelayedComponentRuntime, [{ name: 'createLazyEventComponent' }]))
-                  identifier += '_delayedEvent'
-                  imports.add(`const ${identifier} = createLazyEventComponent(${dynamicImport})`)
-                  break
-                case 'Idle':
-                case 'idle-':
-                  imports.add(genImport(options.clientDelayedComponentRuntime, [{ name: 'createLazyNetworkComponent' }]))
-                  identifier += '_delayedNetwork'
-                  imports.add(`const ${identifier} = createLazyNetworkComponent(${dynamicImport})`)
-                  break
-                case 'Media':
-                case 'media-':
-                  imports.add(genImport(options.clientDelayedComponentRuntime, [{ name: 'createLazyMediaComponent' }]))
-                  identifier += '_delayedMedia'
-                  imports.add(`const ${identifier} = createLazyMediaComponent(${dynamicImport})`)
-                  break
-                case 'If':
-                case 'if-':
-                  imports.add(genImport(options.clientDelayedComponentRuntime, [{ name: 'createLazyIfComponent' }]))
-                  identifier += '_delayedIf'
-                  imports.add(`const ${identifier} = createLazyIfComponent(${dynamicImport})`)
-                  break
-                case 'Never':
-                case 'never-':
-                  imports.add(genImport('vue', [{ name: 'defineAsyncComponent', as: '__defineAsyncComponent' }]))
-                  identifier += '_delayedNever'
-                  imports.add(`const ${identifier} = __defineAsyncComponent({loader: ${dynamicImport}, hydrate: () => {}})`)
-                  break
-                case 'Time':
-                case 'time-':
-                  imports.add(genImport(options.clientDelayedComponentRuntime, [{ name: 'createLazyTimeComponent' }]))
-                  identifier += '_delayedTime'
-                  imports.add(`const ${identifier} = createLazyTimeComponent(${dynamicImport})`)
-                  break
-                case 'Promise':
-                case 'promise-':
-                  imports.add(genImport(options.clientDelayedComponentRuntime, [{ name: 'createLazyPromiseComponent' }]))
-                  identifier += '_delayedPromise'
-                  imports.add(`const ${identifier} = createLazyPromiseComponent(${dynamicImport})`)
-                  break
-              }
+              const normalizedModifier = modifier.toLowerCase().replace(/-$/, '')
+              const fnName = `createHydrate${pascalCase(normalizedModifier)}`
+              imports.add(genImport(options.clientDelayedComponentRuntime, [{ name: fnName }]))
+              identifier += '_' + normalizedModifier
+              imports.add(`const ${identifier} = ${fnName}(${dynamicImport})`)
             } else {
               imports.add(genImport('vue', [{ name: 'defineAsyncComponent', as: '__defineAsyncComponent' }]))
               identifier += '_lazy'
