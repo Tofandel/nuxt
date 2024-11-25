@@ -211,7 +211,7 @@ export async function buildClient (ctx: ViteBuildContext) {
   await ctx.nuxt.callHook('vite:extendConfig', clientConfig, { isClient: true, isServer: false })
 
   clientConfig.plugins!.unshift(
-    vuePlugin(clientConfig.vue),
+    vuePlugin(defu({ template: { compilerOptions: { nodeTransforms: ctx.nuxt.options._vueNodeTransforms } } }, clientConfig.vue)),
     viteJsxPlugin(clientConfig.vueJsx),
   )
 

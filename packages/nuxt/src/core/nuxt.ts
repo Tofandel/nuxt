@@ -86,6 +86,7 @@ const keyDependencies = [
 let warnedAboutCompatDate = false
 
 async function initNuxt (nuxt: Nuxt) {
+  nuxt.options._vueNodeTransforms.push(...(await import('../components/transforms')).default)
   // Register user hooks
   for (const config of nuxt.options._layers.map(layer => layer.config).reverse()) {
     if (config.hooks) {

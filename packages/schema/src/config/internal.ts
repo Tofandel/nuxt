@@ -1,4 +1,5 @@
 import { defineUntypedSchema } from 'untyped'
+import type { NodeTransform } from '@vue/compiler-core'
 
 export default defineUntypedSchema({
   /** @private */
@@ -30,4 +31,6 @@ export default defineUntypedSchema({
   _installedModules: [],
   /** @private */
   _modules: [],
+  /** @private */
+  _vueNodeTransforms: [] as NodeTransform[],
 })
